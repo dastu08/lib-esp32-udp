@@ -49,12 +49,15 @@ function udp_message_handle(msg: string) {
 
             // response it send after a get request
             case "response":
+                replyText += obj.time + ',';
                 obj.quantity.forEach(element => {
                     if (element.name == "temperature") {
-                        replyText += `temperature ${element.value} ${element.unit}, `;
+                        replyText += element.value + ',';
                     }
-                    if (element.name == "pressure") {
-                        replyText += `pressure = ${element.value} ${element.unit}. `;
+                    else if (element.name == "pressure") {
+                        replyText += element.value + '';
+                    } else {
+                        replyText += ',';
                     }
                 });
                 lift_message_handle("response", replyText);
@@ -63,23 +66,22 @@ function udp_message_handle(msg: string) {
             // measurement is send periodically w/o a request
             case "measurement":
                 if (obj.hasOwnProperty("time") && obj.hasOwnProperty("quantity")) {
-                    replyText += `${obj.time.slice(11)} : `;
-                    // loop through the list of quantity
+                    replyText += obj.time + ',';
                     obj.quantity.forEach(element => {
                         if (element.name == "temperature") {
-                            replyText += `${element.value} ${element.unit}, `;
+                            replyText += element.value + ',';
+                        } else if (element.name == "pressure") {
+                            replyText += element.value;
                         }
-                        if (element.name == "pressure") {
-                            replyText += `${element.value} ${element.unit}. `;
+                        else {
+                            replyText += ',';
                         }
                     });
                     lift_message_handle("measurement", replyText);
                 }
                 break;
 
-            // remember last hearbeat time
             case "heartbeat":
-                // heartbeat_last = obj.time;
                 lift_message_handle("heartbeat", `${obj.time.slice(11)}`);
                 break;
 
@@ -135,6 +137,8 @@ export function set(quantity: string, value: string | number) {
         case "listen_interval":
             res.name = "measurement_interval";
             res.value = value;
+            break;
+
         default:
             console.error("Quantity not found!");
             break;
