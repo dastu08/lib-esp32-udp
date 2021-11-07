@@ -1,4 +1,7 @@
+import exp = require("constants");
 import * as udpclient from "./udp-client"
+
+export { loggingEnable, loggingDisable } from './udp-client';
 
 let lift_message_handle: (level: string, message: string) => void;
 

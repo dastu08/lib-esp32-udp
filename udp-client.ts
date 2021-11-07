@@ -1,5 +1,8 @@
 // Library to provide the UDP client in NodeJS
 
+import exp = require("constants");
+import { connected } from "process";
+
 // UDP setup from NodeJS
 const dgram = require('dgram');
 const udp = dgram.createSocket('udp4');
@@ -7,6 +10,21 @@ const udp = dgram.createSocket('udp4');
 // UDP client configuration
 var esp_udpport: number = -1;
 var esp_ipaddr: string = "";
+var log_debug = false;
+
+function log(msg: string) {
+    if (log_debug) {
+        console.log(msg);
+    }
+}
+
+export function loggingEnable() {
+    log_debug = true;
+}
+
+export function loggingDisable() {
+    log_debug = false;
+}
 
 // Set ip address and port (port is optional)
 export function init(ipaddr: string, port: number) {
@@ -21,7 +39,8 @@ export function send(msg: string) {
             console.error(error);
             udp.close();
         }
-        console.log(`<< ${esp_ipaddr}:${esp_udpport} (${bytes}bytes) ${msg}`);
+
+        log(`<< ${esp_ipaddr}:${esp_udpport} (${bytes}bytes) ${msg}`);
     });
 }
 
@@ -34,18 +53,18 @@ export function start(callback: (message: string) => void) {
     }
 
     udp.on("error", (err) => {
-        console.log(`udp server error:\n${err.stack}`);
+        console.error(`udp server error:\n${err.stack}`);
         udp.close();
     });
 
     udp.on("message", (msg, rinfo) => {
-        console.log(`>> ${rinfo.address}:${rinfo.port} ${msg.toString()}`);
+        log(`>> ${rinfo.address}:${rinfo.port} ${msg.toString()}`);
         callback(msg);
     });
 
     udp.on("listening", () => {
         const address = udp.address();
-        console.log(`udp server listening ${address.address}:${address.port}`);
+        log(`udp server listening ${address.address}:${address.port}`);
     });
 
     // start listening by binding to the port
