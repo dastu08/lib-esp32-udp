@@ -1,12 +1,9 @@
 import exp = require("constants");
 import * as udpclient from "./udp-client"
-import * as aes256cbc from "./aes-256-cbc";
 
 export { loggingEnable, loggingDisable } from './udp-client';
 
 let lift_message_handle: (level: string, message: string) => void;
-
-let key = Buffer.from("a818321f988274f6a4eaf29c82df2614a296f9c06ca5776a893e1d0c9e35e1f9", "hex");
 
 type espQuantity = {
     name: string;
@@ -38,83 +35,71 @@ export function start(ipaddr: string, port: number, callback: (level: string, me
 }
 
 // Function handle for incoming udp messages
-function udp_message_handle(msg: Buffer) {
-    try {
-        aes256cbc.decrypt(key, msg, (plaintext) => {
-            // console.log(`Decrypted: ${plaintext}`);
+function udp_message_handle(msg: string) {
+    // assume message is in json format
+    let obj: udpObjReceive = JSON.parse(msg);
+    let replyText = "";
 
-            // assume message is in json format
-            let obj: udpObjReceive = JSON.parse(plaintext.toString());
-            let replyText = "";
+    // only send bot reply if the udp message is correct
+    if (obj.hasOwnProperty("type")) {
 
-            // only send bot reply if the udp message is correct
-            if (obj.hasOwnProperty("type")) {
+        // switch on type value
+        switch (obj.type) {
+            // notify if the esp32 send a hello world event
+            case "hello world":
+                lift_message_handle("debug", "ESP32 connected");
+                break;
 
-                // switch on type value
-                switch (obj.type) {
-                    // notify if the esp32 send a hello world event
-                    case "hello world":
-                        lift_message_handle("debug", "ESP32 connected");
-                        break;
+            // response it send after a get request
+            case "response":
+                replyText += obj.time + ',';
+                obj.quantity.forEach(element => {
+                    if (element.name == "temperature") {
+                        replyText += element.value + ',';
+                    }
+                    else if (element.name == "pressure") {
+                        replyText += element.value + '';
+                    } else {
+                        replyText += ',';
+                    }
+                });
+                lift_message_handle("response", replyText);
+                break;
 
-                    // response it send after a get request
-                    case "response":
-                        replyText += obj.time + ',';
-                        obj.quantity.forEach(element => {
-                            if (element.name == "temperature") {
-                                replyText += element.value + ',';
-                            }
-                            else if (element.name == "pressure") {
-                                replyText += element.value + '';
-                            } else {
-                                replyText += ',';
-                            }
-                        });
-                        lift_message_handle("response", replyText);
-                        break;
-
-                    // measurement is send periodically w/o a request
-                    case "measurement":
-                        if (obj.hasOwnProperty("time") && obj.hasOwnProperty("quantity")) {
-                            replyText += obj.time + ',';
-                            obj.quantity.forEach(element => {
-                                if (element.name == "temperature") {
-                                    replyText += element.value + ',';
-                                } else if (element.name == "pressure") {
-                                    replyText += element.value;
-                                }
-                                else {
-                                    replyText += ',';
-                                }
-                            });
-                            lift_message_handle("measurement", replyText);
+            // measurement is send periodically w/o a request
+            case "measurement":
+                if (obj.hasOwnProperty("time") && obj.hasOwnProperty("quantity")) {
+                    replyText += obj.time + ',';
+                    obj.quantity.forEach(element => {
+                        if (element.name == "temperature") {
+                            replyText += element.value + ',';
+                        } else if (element.name == "pressure") {
+                            replyText += element.value;
                         }
-                        break;
-
-                    case "heartbeat":
-                        lift_message_handle("heartbeat", `${obj.time.slice(11)}`);
-                        break;
-
-                    case "error":
-                        lift_message_handle("error", "Got error");
-                        break;
-
-                    default:
-                        lift_message_handle("error", "Unknown type");
-                        break;
-
+                        else {
+                            replyText += ',';
+                        }
+                    });
+                    lift_message_handle("measurement", replyText);
                 }
-            } else {
-                lift_message_handle("error", "I could not handle the received UDP message.");
-            }
+                break;
 
-        });
+            case "heartbeat":
+                lift_message_handle("heartbeat", `${obj.time.slice(11)}`);
+                break;
 
+            case "error":
+                lift_message_handle("error", "Got error");
+                break;
 
-    } catch (error) {
-        console.log(error);
+            default:
+                lift_message_handle("error", "Unknown type");
+                break;
+
+        }
+    } else {
+        lift_message_handle("error", "I could not handle the received UDP message.");
     }
-
 }
 
 export function get(quantity: string) {
@@ -137,9 +122,7 @@ export function get(quantity: string) {
             break;
     }
 
-    aes256cbc.encrypt(key, JSON.stringify(res), (ciphertext) => {
-        udpclient.send(ciphertext);
-    });
+    udpclient.send(JSON.stringify(res));
 }
 
 export function set(quantity: string, value: string | number) {
@@ -165,7 +148,5 @@ export function set(quantity: string, value: string | number) {
             break;
     }
 
-    aes256cbc.encrypt(key, JSON.stringify(res), (ciphertext) => {
-        udpclient.send(ciphertext);
-    });
+    udpclient.send(JSON.stringify(res));
 }
