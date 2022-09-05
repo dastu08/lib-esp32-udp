@@ -32,14 +32,14 @@ export function init(ipaddr: string, port: number) {
 }
 
 // Send a message via the UDP client. Run init first!
-export function send(msg: string) {
-    udp.send(Buffer.from(msg), esp_udpport, esp_ipaddr, (error, bytes) => {
+export function send(msg: Buffer) {
+    udp.send(msg, esp_udpport, esp_ipaddr, (error, bytes) => {
         if (error) {
             console.error(error);
             udp.close();
         }
 
-        log(`<< ${esp_ipaddr}:${esp_udpport} (${bytes} bytes, ${bytes/16} words) ${msg}`);
+        log(`<< ${esp_ipaddr}:${esp_udpport} (${bytes} bytes, ${bytes/16} words) ${msg.toString('hex')}`);
     });
 }
 
