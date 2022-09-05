@@ -20,10 +20,13 @@ export function generateIv(): Buffer {
 }
 
 // expect the plainText to be utf8 encoded.
-export function encrypt(key: Buffer, iv: Buffer, plainText: string, callback: (cipherText: Buffer) => any) {
+export function encrypt(key: Buffer, plainText: string, callback: (cipherText: Buffer) => any) {
+    // generate IV for this message
+    let iv: Buffer = generateIv();
+    
     // cipher can be now used as a stream
     const cipher = crypto.createCipheriv(algo, key, iv);
-    cipher.setAutoPadding(false);
+    // cipher.setAutoPadding(false);
 
     let cipherText: Buffer = iv;
 
