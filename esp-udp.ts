@@ -136,7 +136,10 @@ export function get(quantity: string) {
         default:
             break;
     }
-    udpclient.send(JSON.stringify(res));
+
+    aes256cbc.encrypt(key, JSON.stringify(res), (ciphertext) => {
+        udpclient.send(ciphertext);
+    });
 }
 
 export function set(quantity: string, value: string | number) {
@@ -161,5 +164,8 @@ export function set(quantity: string, value: string | number) {
             console.error("Quantity not found!");
             break;
     }
-    udpclient.send(JSON.stringify(res));
+
+    aes256cbc.encrypt(key, JSON.stringify(res), (ciphertext) => {
+        udpclient.send(ciphertext);
+    });
 }
