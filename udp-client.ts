@@ -13,7 +13,7 @@ var esp_ipaddr: string = "";
 var log_debug: boolean = false;
 
 // 32 byte key for crypto
-const key = Buffer.from("a818321f988274f6a4eaf29c82df2614a296f9c06ca5776a893e1d0c9e35e1f9", "hex");
+var key: Buffer = Buffer.alloc(32);
 
 function log(msg: string) {
     if (log_debug) {
@@ -32,9 +32,14 @@ export function loggingDisable() {
 }
 
 // Set ip address and port (port is optional)
-export function init(ipaddr: string, port: number) {
+export function init(ipaddr: string, port: number, aeskey:string) {
     esp_ipaddr = ipaddr;
     esp_udpport = port;
+    key = Buffer.from(aeskey, 'hex');
+    if (key.length != 32) {
+        console.error("Error: Encryption key has not the length of 32 bytes.");
+        process.exit(1);
+    }
 }
 
 // Send a message via the UDP client. Run init first!

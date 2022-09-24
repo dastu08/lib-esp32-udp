@@ -24,8 +24,8 @@ type udpObjSend = {
     value?: string | number;
 }
 
-export function start(ipaddr: string, port: number, callback: (level: string, message: string) => void) {
-    udpclient.init(ipaddr, port);
+export function start(ipaddr: string, port: number, key: string, callback: (level: string, message: string) => void) {
+    udpclient.init(ipaddr, port, key);
 
     // set the callback function that is called when an incoming message is
     // received
